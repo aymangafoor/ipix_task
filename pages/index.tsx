@@ -52,7 +52,7 @@ export default function Home(props: any) {
       else {
         axios.get(`/api/users?name=${user_name}&password=${password}`)
           .then(res => {
-            localStorage.setItem("user_details", JSON.stringify(res))
+            localStorage.setItem("user_details", JSON.stringify(res.data.data))
             push("/catalog-management")
             alert("Login success")
           })
@@ -77,6 +77,14 @@ export default function Home(props: any) {
             push("/catalog-management",)
           })
           .catch(err => {
+            console.log("error is", err.response.data)
+            let error = err.response.data?.error
+            if (error === "already taken") {
+              alert("User name is already taken")
+            }
+            else {
+              alert("error on creating")
+            }
             console.log("error")
           })
       }
@@ -125,7 +133,7 @@ export default function Home(props: any) {
           <label htmlFor="password" className='mb-2' >Password</label>
           <input type='password' value={password} onChange={e => setPassword(e.target.value)} id='password' className='form-control mb-3' placeholder='Enter your password' />
 
-          <input type='submit' className="btn btn-primary mt-2 mx-auto w-100" value="Sign In" />
+          <input type='submit' className="btn btn-primary mt-2 mx-auto w-100" value={login ? "Sign In" : "Register"} />
         </form>
         <p className='btn' onClick={() => changeType(!login)}>{login ? "New User? Register Now" : "Already a user? Login"}</p>
       </div> : ""}

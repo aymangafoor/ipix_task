@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import clientPromise from "../../lib/mongodb";
 
 export default async (req, res) => {
@@ -21,26 +22,35 @@ export default async (req, res) => {
             res.json({ status: 200, data: post });
         }
         else if (req.method === "DELETE") {
-            let data = JSON.parse(req.body)
-            let deleteProduct = await db.collection("products").deleteOne({ _id: new ObjectID(data) })
+            let data = req.body
+            console.log("data to delete", data)
+            let id = new ObjectId(data._id)
+            let deleteProduct = await db.collection("products").deleteOne({ _id: id })
             if (deleteProduct.deletedCount === 1) {
                 console.log('product deleted successfully.');
+                res.json({ status: 200, data: "success" });
+
             } else {
                 console.log('product not found or already deleted.');
+                res.status(400).json({ error: 'product not found' });
             }
         }
         else if (req.method === "PATCH") {
-            let data = JSON.parse(req.body)
-            let id = data._id
+            let data = req.body
+            let id = new ObjectId(data._id) //for mongo db to identify the id to edit
+            delete data._id //deleted as id is not needed in new detail
             let collection = await db.collection("products")
+            console.log("data to upadte", data)
             const result = await collection.updateOne(
-                { _id: new ObjectID(id) },
+                { _id: id },
                 { $set: data }
             );
             if (result.matchedCount === 1) {
-                console.log('Product updated successfully.');
+                console.log('product updated successfully.');
+                res.json({ status: 200, data: "success" });
             } else {
-                console.log('Product not found for updating.');
+                console.log('Product not found for updating.', result);
+                res.status(400).json({ error: 'product not found' });
             }
         }
     } catch (e) {

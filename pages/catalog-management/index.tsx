@@ -1,11 +1,17 @@
 import type { InferGetServerSidePropsType, GetServerSideProps } from 'next'
 import clientPromise from '../../lib/mongodb';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation'
 import axios from "axios"
+import Loader from "../../src/components/loader"
+import Spinner from "../../src/components/spinner"
 
 const Catalog = (props: any) => {
+    const { push } = useRouter();
+    const [loader, setloader] = useState(false)
     const [popup, setOpen] = useState(false)
     const [edit, setedit] = useState("")
+    const [image, setImage] = useState<string | ArrayBuffer | null>("")
     const [cat_popup, setOpenCat] = useState(false)
     const [title, setTitle] = useState("")
     const [price, setPrice] = useState("")
@@ -13,6 +19,18 @@ const Catalog = (props: any) => {
     useEffect(() => {
         console.log("Products are", props)
     }, [])
+    const handleFileChange = (event: any) => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.addEventListener('load', () => {
+                // Set the Base64 string from the reader to the image state
+                setImage(reader.result);
+            });
+
+            reader.readAsDataURL(file);
+        }
+    };
     const ModifyCategory = (e: any) => {
         e.preventDefault()
         //check if all data is entered
@@ -40,69 +58,50 @@ const Catalog = (props: any) => {
         console.log("data is", event.target.elements.title.value)
         //check if all data is entered
         if (!event.target.elements.title.value ||
-            // !event.target.elements.category.value ||
+            !event.target.elements.category.value ||
             !event.target.elements.price.value) {
             alert("Enter all details")
         }
-        //call api to add product from api folder
+        //call api to add or update product from api folder
         else {
+            setloader(true)
             if (edit) {
-                let file
-                console.log("file is", event.target.elements.file.files)
-                const reader = new FileReader();
-                reader.addEventListener('load', () => {
-                    //Initiate the JavaScript Image object.
-                    var image = new Image();
-                    //Set the Base64 string return from FileReader as source.
-                    file = reader.result
-                }
-                );
-                reader.readAsDataURL(event.target.elements.file.files[0]);
-                file = reader.result
-                console.log("result", file)
-                axios.post(`/api/products`, {
+                let data = {
                     _id: edit,
                     name: event.target.elements.title.value,
                     category: event.target.elements.category.value,
                     price: event.target.elements.price.value,
-                    image: file
-                })
+                    image: image
+                }
+                axios.patch(`/api/products`, data)
                     .then(res => {
                         console.log("updated data is", res)
                         setOpen(false)
+                        setloader(false)
                         alert("Product updated Successfully")
                     })
                     .catch(err => {
                         console.error("error on add is", err)
+                        setloader(false)
                         alert("Error on updating product")
                     })
             }
             else {
-                let file
-                console.log("file is", event.target.elements.file.files)
-                const reader = new FileReader();
-                reader.addEventListener('load', () => {
-                    //Initiate the JavaScript Image object.
-                    var image = new Image();
-                    //Set the Base64 string return from FileReader as source.
-                    file = reader.result
-                }
-                );
-                reader.readAsDataURL(event.target.elements.file.files[0]);
-                file = reader.result
-                console.log("result", file)
-                axios.post(`/api/products`, {
+                let data = {
                     name: event.target.elements.title.value,
                     category: event.target.elements.category.value,
                     price: event.target.elements.price.value,
-                    image: file
-                })
+                    image: image
+                }
+                axios.post(`/api/products`, data)
                     .then(res => {
                         console.log("updated data is", res)
                         setOpen(false)
+                        setloader(false)
                         alert("Created Successfully")
                     })
                     .catch(err => {
+                        setloader(false)
                         console.error("error on add is", err)
                         alert("Error on Creation")
                     })
@@ -111,7 +110,7 @@ const Catalog = (props: any) => {
     }
     const deleteProduct = (id: string) => {
         axios.delete("/api/products", {
-            params: { _id: id }
+            data: { _id: id }
         })
             .then(res => {
                 alert("Product deleted successfully")
@@ -129,8 +128,9 @@ const Catalog = (props: any) => {
         setOpen(true)
     }
     return (<div className="container my-sm-5 py-sm-5 my-3 py-3">
+        {loader ? <Loader /> : ""}
         <h4>Catalog Management</h4>
-        <p className='btn' onClick={() => localStorage.removeItem("user_details")}>Logout</p>
+        <p className='btn' onClick={() => { localStorage.removeItem("user_details"); push("/") }}>Logout</p>
         <div className='row'>
             <div className="col-sm-6 col-12 mb-4">
                 <button className="btn btn-primary" onClick={() => { setOpen(true); setedit("") }}>Add a Product</button>
@@ -153,10 +153,10 @@ const Catalog = (props: any) => {
                                 <p className="card-text">Rs.{product.price}</p>
                                 <div className='row'>
                                     <div className='col-6'>
-                                        <p className='btn' onClick={() => updateProduct(product)}>Edit</p>
+                                        <p className='btn btn-info' onClick={() => updateProduct(product)}>Edit</p>
                                     </div>
                                     <div className='col-6'>
-                                        <p className='btn' onClick={() => deleteProduct(product._id)}>Delete</p>
+                                        <p className='btn btn-info' onClick={() => deleteProduct(product._id)}>Delete</p>
                                     </div>
                                 </div>
                             </div>
@@ -185,7 +185,7 @@ const Catalog = (props: any) => {
                 </div>
                 <div className='col-12 mb-3'>
                     <label htmlFor='file' className='col-12 mb-1'>Select an image</label>
-                    <input type='file' name='file' id='file' accept="image/*" />
+                    <input type='file' name='file' id='file' onChange={handleFileChange} accept="image/*" />
                 </div>
                 <input type='submit' className='btn btn-primary' value="Submit" />
             </form>
