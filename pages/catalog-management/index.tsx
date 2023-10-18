@@ -54,7 +54,6 @@ const Catalog = (props: any) => {
                     //Initiate the JavaScript Image object.
                     var image = new Image();
                     //Set the Base64 string return from FileReader as source.
-                    image.src = reader.result;
                     file = reader.result
                 }
                 );
@@ -86,7 +85,6 @@ const Catalog = (props: any) => {
                     //Initiate the JavaScript Image object.
                     var image = new Image();
                     //Set the Base64 string return from FileReader as source.
-                    image.src = reader.result;
                     file = reader.result
                 }
                 );
@@ -173,13 +171,13 @@ const Catalog = (props: any) => {
             </div>
             <form onSubmit={AddUpdateProduct} className='col-12'>
                 <div className='col-12 mb-3'>
-                    <input type='text' name="title" value={title} className='w-100' placeholder='Enter the title of product' />
+                    <input type='text' name="title" value={title} onChange={(e) => setTitle(e.target.value)} className='w-100' placeholder='Enter the title of product' />
                 </div>
                 <div className='col-12 mb-3'>
-                    <input type='text' value={price} name="price" className='w-100' placeholder='Enter the Price' />
+                    <input type='text' value={price} onChange={(e) => setPrice(e.target.value)} name="price" className='w-100' placeholder='Enter the Price' />
                 </div>
                 <div className='col-12 mb-3'>
-                    <select placeholder='Select Categories' value={category} name='category' className='w-100'>
+                    <select placeholder='Select Categories' value={category} onChange={(e) => setCategory(e.target.value)} name='category' className='w-100'>
                         {props.categories?.map((category: any) => {
                             return <option value={category.title}>{category.title}</option>
                         })}
